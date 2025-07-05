@@ -16,6 +16,10 @@ public class ConstructorExample {
 		Student rahul = new Student(rohit);
 		
 		System.out.println(rahul.name);
+		
+		Pen pen = new Pen("Blue");
+		Pen redPen = new Pen("Red");
+		
 	}
 
 }
@@ -35,7 +39,7 @@ class Car {
 
 class Test {
 	public Test() {
-		//super();
+		super();
 	}
 	
 	Test(int a) {
