@@ -9,6 +9,15 @@
 		<param-name>dbUrl</param-name>
 		<param-value>dbUrl value</param-value>
 	</context-param>
+	
+	<servlet>
+		<servlet-name>implicit</servlet-name>
+		<jsp-file>/implicit.jsp</jsp-file>
+		<init-param>
+			<param-name>param1</param-name>
+			<param-value>value1</param-value>
+		</init-param>
+	</servlet>
 
 	<filter>
 		<filter-name>LoggingF</filter-name>
