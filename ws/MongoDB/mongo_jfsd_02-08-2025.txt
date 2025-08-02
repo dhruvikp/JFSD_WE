@@ -1,0 +1,517 @@
+Microsoft Windows [Version 10.0.19045.6093]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\dhruv>mongosh
+Current Mongosh Log ID: 688e0e2ed579cfd289eec4a8
+Connecting to:          mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.5.6
+Using MongoDB:          7.0.11
+Using Mongosh:          2.5.6
+
+For mongosh info see: https://www.mongodb.com/docs/mongodb-shell/
+
+------
+   The server generated these startup warnings when booting
+   2025-08-02T18:39:03.626+05:30: Access control is not enabled for the database. Read and write access to data and configuration is unrestricted
+------
+
+test> showdbs
+ReferenceError: showdbs is not defined
+test> show db
+MongoshInvalidInputError: [COMMON-10001] 'db' is not a valid argument for "show".
+test> show dbs
+admin   40.00 KiB
+config  84.00 KiB
+local   88.00 KiB
+shop    72.00 KiB
+
+users> const profileId = db.profiles.insertOne({age:30, gender:"male", bio:"Software engineer"}).insertedId
+
+users> console.log(profileId)
+ObjectId('688e1b92d579cfd289eec4aa')
+
+users> db.user.insertOne({name:"Mohit", email:"mohit@simplilearn.com",profile_id:profileId})
+{
+  acknowledged: true,
+  insertedId: ObjectId('688e1bdfd579cfd289eec4ab')
+}
+users> db.users.findOne({name:"Mohit"})
+null
+users> db.user.findOne({name:"Mohit"})
+{
+  _id: ObjectId('688e1bdfd579cfd289eec4ab'),
+  name: 'Mohit',
+  email: 'mohit@simplilearn.com',
+  profile_id: ObjectId('688e1b92d579cfd289eec4aa')
+}
+users> const user = db.user.findOne({name:"Mohit"})
+
+users> db.profiles.findOne({_id: user.profile_id})
+{
+  _id: ObjectId('688e1b92d579cfd289eec4aa'),
+  age: 30,
+  gender: 'male',
+  bio: 'Software engineer'
+}
+users>
+
+users> const postId = db.posts.insertOne({title:"Mongodb data modelling", content:"Lets learn embedded vs referenced models"}).insertedId
+
+users> db.comments.insertMany([{post_id: postId, author:"Noel", text:"Great article!"}, {post_id:postId, author:"Dhruvik", text:"Very helpful, thanks!"}])
+{
+  acknowledged: true,
+  insertedIds: {
+    '0': ObjectId('688e1cc9d579cfd289eec4ad'),
+    '1': ObjectId('688e1cc9d579cfd289eec4ae')
+  }
+}
+users> const post = db.posts.findOne({_id: postId})
+shop         72.00 KiB
+users> console.log(post)
+{
+  _id: ObjectId('688e1c75d579cfd289eec4ac'),
+  title: 'Mongodb data modelling',
+  content: 'Lets learn embedded vs referenced models'
+}
+
+users> const comments = db.comments.find({post_id: postId}).toArray()
+
+users> console.log(comments)
+[
+  {
+    _id: ObjectId('688e1cc9d579cfd289eec4ad'),
+    post_id: ObjectId('688e1c75d579cfd289eec4ac'),
+    author: 'Noel',
+    text: 'Great article!'
+  },
+  {
+    _id: ObjectId('688e1cc9d579cfd289eec4ae'),
+    post_id: ObjectId('688e1c75d579cfd289eec4ac'),
+    author: 'Dhruvik',
+    text: 'Very helpful, thanks!'
+  }
+]
+
+users> db.posts.aggregate([{
+...     $lookup: {
+...             from: "comments",
+...             localField: "_id",
+...             foreignField:"post_id",
+...             as: "post_comments"
+...     }
+... }])
+[
+  {
+    _id: ObjectId('688e1c75d579cfd289eec4ac'),
+    title: 'Mongodb data modelling',
+    content: 'Lets learn embedded vs referenced models',
+    post_comments: [
+      {
+        _id: ObjectId('688e1cc9d579cfd289eec4ad'),
+        post_id: ObjectId('688e1c75d579cfd289eec4ac'),
+        author: 'Noel',
+        text: 'Great article!'
+      },
+      {
+        _id: ObjectId('688e1cc9d579cfd289eec4ae'),
+        post_id: ObjectId('688e1c75d579cfd289eec4ac'),
+        author: 'Dhruvik',
+        text: 'Very helpful, thanks!'
+      }
+    ]
+  }
+]
+
+
+
+
+users> show collections
+comments
+posts
+profiles
+user
+users> db.createCollection("users", {
+...     validator: {
+...             $jsonSchema:{
+...                     bsonType: "object",
+...                     required: ["name", "email", "age"],
+...                     proerties: {
+...                             name: {
+...                                     bsonType: "string",
+...                                     description: "must be a string and is required"
+...                             },
+...                             email: {
+...                                     bsonType: "string",
+...                                     pattern: "^.+@.+$",
+...                                     description:"Must be a valid email"
+...                             },
+...                             age: {
+...                                     bsonType: "int",
+...                                     minimum: 18,
+...                                     maximum: 100,
+...                                     description: "must be an integer in [18,100"
+...                             },
+...                             gender: {
+...                                     enum: ["Male", "Female", "Other"],
+...                                     description: "can only be male, Female or other"
+...                             }
+...                     }
+...             }
+...     }
+... })
+MongoServerError[FailedToParse]: Unknown $jsonSchema keyword: proerties
+users> db.createCollection("users", { validator: { $jsonSchema: { bsonType: "object", required: ["name", "email", "age"], properties: { name: { bsonType: "string", description: "must be a string and is required" }, email: { bsonType: "string", pattern: "^.+@.+$", description: "Must be a valid email" }, age: { bsonType: "int", minimum: 18, maximum: 100, description: "must be an integer in [18,100" }, gender: { enum: ["Male", "Female", "Other"], description: "can only be male, Female or other" } } } } })
+{ ok: 1 }
+users> db.users.insertOne({name:"Bob", age: 25})
+Uncaught:
+MongoServerError: Document failed validation
+Additional information: {
+  failingDocumentId: ObjectId('688e24fad579cfd289eec4af'),
+  details: {
+    operatorName: '$jsonSchema',
+    schemaRulesNotSatisfied: [
+      {
+        operatorName: 'required',
+        specifiedAs: { required: [ 'name', 'email', 'age' ] },
+        missingProperties: [ 'email' ]
+      }
+    ]
+  }
+}
+users> db.users.insertOne({name:"Bob", age: 25,email:"dhruvik"})
+Uncaught:
+MongoServerError: Document failed validation
+Additional information: {
+  failingDocumentId: ObjectId('688e251cd579cfd289eec4b0'),
+  details: {
+    operatorName: '$jsonSchema',
+    schemaRulesNotSatisfied: [
+      {
+        operatorName: 'properties',
+        propertiesNotSatisfied: [
+          {
+            propertyName: 'email',
+            description: 'Must be a valid email',
+            details: [
+              {
+                operatorName: 'pattern',
+                specifiedAs: { pattern: '^.+@.+$' },
+                reason: 'regular expression did not match',
+                consideredValue: 'dhruvik'
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+users> db.users.insertOne({name:"Bob", age: 25,email:"dhruvik@dhruvik.com"})
+{
+  acknowledged: true,
+  insertedId: ObjectId('688e2527d579cfd289eec4b1')
+}
+users> db.runCommand({
+...     collMod:"users",
+...     validator: {
+...             $jsonSchema: {
+...                     bsonType: "object",
+...                     required: ["name","email"],
+...                     properties: {
+...                             name: {bsonType: "string"},
+...                             email: {bsonType: "string"}
+...                     }
+...             }
+...     },
+...     validationLeel: "strict" // or moderate
+users> db.runCommand({ collMod: "users", validator: { $jsonSchema: { bsonType: "object", required: ["name", "email"], properties: { name: { bsonType: "string" }, email: { bsonType: "string" } } } }, validationLevel: "strict" /* or moderate*/ })
+{ ok: 1 }
+users>
+
+
+
+
+
+
+users> db.usrs.insertMany([{name:"Drk", age: 25, tags: ["dev","mongo"], createdAt: new Date()}, {name:"bob", age:30, tags: ["java","backend"], createdAt: new Date()}])
+{
+  acknowledged: true,
+  insertedIds: {
+    '0': ObjectId('688e2894d579cfd289eec4b4'),
+    '1': ObjectId('688e2894d579cfd289eec4b5')
+  }
+}
+users> db.usrs.createIndex({name:1})
+name_1
+users> db.usrs.find({name:"Drk"}).explain("executionStats")
+{
+  explainVersion: '1',
+  queryPlanner: {
+    namespace: 'users.usrs',
+    indexFilterSet: false,
+    parsedQuery: { name: { '$eq': 'Drk' } },
+    queryHash: 'A2F868FD',
+    planCacheKey: 'A3E454E0',
+    maxIndexedOrSolutionsReached: false,
+    maxIndexedAndSolutionsReached: false,
+    maxScansToExplodeReached: false,
+    winningPlan: {
+      stage: 'FETCH',
+      inputStage: {
+        stage: 'IXSCAN',
+        keyPattern: { name: 1 },
+        indexName: 'name_1',
+        isMultiKey: false,
+        multiKeyPaths: { name: [] },
+        isUnique: false,
+        isSparse: false,
+        isPartial: false,
+        indexVersion: 2,
+        direction: 'forward',
+        indexBounds: { name: [ '["Drk", "Drk"]' ] }
+      }
+    },
+    rejectedPlans: []
+  },
+  executionStats: {
+    executionSuccess: true,
+    nReturned: 1,
+    executionTimeMillis: 3,
+    totalKeysExamined: 1,
+    totalDocsExamined: 1,
+    executionStages: {
+      stage: 'FETCH',
+      nReturned: 1,
+      executionTimeMillisEstimate: 0,
+      works: 2,
+      advanced: 1,
+      needTime: 0,
+      needYield: 0,
+      saveState: 0,
+      restoreState: 0,
+      isEOF: 1,
+      docsExamined: 1,
+      alreadyHasObj: 0,
+      inputStage: {
+        stage: 'IXSCAN',
+        nReturned: 1,
+        executionTimeMillisEstimate: 0,
+        works: 2,
+        advanced: 1,
+        needTime: 0,
+        needYield: 0,
+        saveState: 0,
+        restoreState: 0,
+        isEOF: 1,
+        keyPattern: { name: 1 },
+        indexName: 'name_1',
+        isMultiKey: false,
+        multiKeyPaths: { name: [] },
+        isUnique: false,
+        isSparse: false,
+        isPartial: false,
+        indexVersion: 2,
+        direction: 'forward',
+        indexBounds: { name: [ '["Drk", "Drk"]' ] },
+        keysExamined: 1,
+        seeks: 1,
+        dupsTested: 0,
+        dupsDropped: 0
+      }
+    }
+  },
+  command: { find: 'usrs', filter: { name: 'Drk' }, '$db': 'users' },
+  serverInfo: {
+    host: 'Dhruvik',
+    port: 27017,
+    version: '7.0.11',
+    gitVersion: 'f451220f0df2b9dfe073f1521837f8ec5c208a8c'
+  },
+  serverParameters: {
+    internalQueryFacetBufferSizeBytes: 104857600,
+    internalQueryFacetMaxOutputDocSizeBytes: 104857600,
+    internalLookupStageIntermediateDocumentMaxSizeBytes: 104857600,
+    internalDocumentSourceGroupMaxMemoryBytes: 104857600,
+    internalQueryMaxBlockingSortMemoryUsageBytes: 104857600,
+    internalQueryProhibitBlockingMergeOnMongoS: 0,
+    internalQueryMaxAddToSetBytes: 104857600,
+    internalDocumentSourceSetWindowFieldsMaxMemoryBytes: 104857600,
+    internalQueryFrameworkControl: 'trySbeRestricted'
+  },
+  ok: 1
+}
+users> db.usrs.find({name:"Drk", age:25})
+[ame_1_age_-1
+  {
+    _id: ObjectId('688e2894d579cfd289eec4b4'),
+    name: 'Drk',
+    age: 25,
+    tags: [ 'dev', 'mongo' ],
+    createdAt: ISODate('2025-08-02T15:02:44.217Z')
+  }
+]
+users> db.usrs.find({name:"Drk", age:25}).explain("executionStats")
+{
+  explainVersion: '1',
+  queryPlanner: {
+    namespace: 'users.usrs',
+    indexFilterSet: false,
+    parsedQuery: {
+      '$and': [ { age: { '$eq': 25 } }, { name: { '$eq': 'Drk' } } ]
+    },
+    queryHash: '456CD708',
+    planCacheKey: 'AF741549',
+    maxIndexedOrSolutionsReached: false,
+    maxIndexedAndSolutionsReached: false,
+    maxScansToExplodeReached: false,
+    winningPlan: {
+      stage: 'FETCH',
+      inputStage: {
+        stage: 'IXSCAN',
+        keyPattern: { name: 1, age: -1 },
+        indexName: 'name_1_age_-1',
+        isMultiKey: false,
+        multiKeyPaths: { name: [], age: [] },
+        isUnique: false,
+        isSparse: false,
+        isPartial: false,
+        indexVersion: 2,
+        direction: 'forward',
+        indexBounds: { name: [ '["Drk", "Drk"]' ], age: [ '[25, 25]' ] }
+      }
+    },
+    rejectedPlans: [
+      {
+        stage: 'FETCH',
+        filter: { age: { '$eq': 25 } },
+        inputStage: {
+          stage: 'IXSCAN',
+          keyPattern: { name: 1 },
+          indexName: 'name_1',
+          isMultiKey: false,
+          multiKeyPaths: { name: [] },
+          isUnique: false,
+          isSparse: false,
+          isPartial: false,
+          indexVersion: 2,
+          direction: 'forward',
+          indexBounds: { name: [ '["Drk", "Drk"]' ] }
+        }
+      }
+    ]
+  },
+  executionStats: {
+    executionSuccess: true,
+    nReturned: 1,
+    executionTimeMillis: 0,
+    totalKeysExamined: 1,
+    totalDocsExamined: 1,
+    executionStages: {
+      stage: 'FETCH',
+      nReturned: 1,
+      executionTimeMillisEstimate: 0,
+      works: 3,
+      advanced: 1,
+      needTime: 0,
+      needYield: 0,
+      saveState: 0,
+      restoreState: 0,
+      isEOF: 1,
+      docsExamined: 1,
+      alreadyHasObj: 0,
+      inputStage: {
+        stage: 'IXSCAN',
+        nReturned: 1,
+        executionTimeMillisEstimate: 0,
+        works: 2,
+        advanced: 1,
+        needTime: 0,
+        needYield: 0,
+        saveState: 0,
+        restoreState: 0,
+        isEOF: 1,
+        keyPattern: { name: 1, age: -1 },
+        indexName: 'name_1_age_-1',
+        isMultiKey: false,
+        multiKeyPaths: { name: [], age: [] },
+        isUnique: false,
+        isSparse: false,
+        isPartial: false,
+        indexVersion: 2,
+        direction: 'forward',
+        indexBounds: { name: [ '["Drk", "Drk"]' ], age: [ '[25, 25]' ] },
+        keysExamined: 1,
+        seeks: 1,
+        dupsTested: 0,
+        dupsDropped: 0
+      }
+    }
+  },
+  command: { find: 'usrs', filter: { name: 'Drk', age: 25 }, '$db': 'users' },
+  serverInfo: {
+    host: 'Dhruvik',
+    port: 27017,
+    version: '7.0.11',
+    gitVersion: 'f451220f0df2b9dfe073f1521837f8ec5c208a8c'
+  },
+  serverParameters: {
+    internalQueryFacetBufferSizeBytes: 104857600,
+    internalQueryFacetMaxOutputDocSizeBytes: 104857600,
+    internalLookupStageIntermediateDocumentMaxSizeBytes: 104857600,
+    internalDocumentSourceGroupMaxMemoryBytes: 104857600,
+    internalQueryMaxBlockingSortMemoryUsageBytes: 104857600,
+    internalQueryProhibitBlockingMergeOnMongoS: 0,
+    internalQueryMaxAddToSetBytes: 104857600,
+    internalDocumentSourceSetWindowFieldsMaxMemoryBytes: 104857600,
+    internalQueryFrameworkControl: 'trySbeRestricted'
+  },
+  ok: 1
+}
+users> db.usrs.find(tags: "mongo"})
+Uncaught:
+SyntaxError: Unexpected token, expected "," (1:17)
+
+> 1 | db.usrs.find(tags: "mongo"})
+    |                  ^
+  2 |
+
+users> db.usrs.find({tags: "mongo"})
+[
+  {
+    _id: ObjectId('688e2894d579cfd289eec4b4'),
+    name: 'Drk',
+    age: 25,
+    tags: [ 'dev', 'mongo' ],
+    createdAt: ISODate('2025-08-02T15:02:44.217Z')
+  }
+]
+users> db.usrs.createIndex({createdAt: 1}, {expireAfterSeconds: 3600})
+createdAt_1
+users> db.usrs.dropIndex("name_1")
+{ nIndexesWas: 5, ok: 1 }
+users> db.collection.getIndexes()
+MongoServerError[NamespaceNotFound]: ns does not exist: users.collection
+users> db.usrs.getIndexes()
+[
+  { v: 2, key: { _id: 1 }, name: '_id_' },
+  { v: 2, key: { name: 1, age: -1 }, name: 'name_1_age_-1' },
+  { v: 2, key: { tags: 1 }, name: 'tags_1' },
+  {
+    v: 2,
+    key: { createdAt: 1 },
+    name: 'createdAt_1',
+    expireAfterSeconds: 3600
+  }
+]
+users> db.usrs.getIndexes()
+[
+  { v: 2, key: { _id: 1 }, name: '_id_' },
+  { v: 2, key: { name: 1, age: -1 }, name: 'name_1_age_-1' },
+  { v: 2, key: { tags: 1 }, name: 'tags_1' },
+  {
+    v: 2,
+    key: { createdAt: 1 },
+    name: 'createdAt_1',
+    expireAfterSeconds: 3600
+  },
+  { v: 2, key: { name: 1 }, name: 'name_1' }
+]
