@@ -3,6 +3,7 @@ package com.simplilearn.SpringDemontration.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import com.simplilearn.SpringDemontration.service.EmployeeService;
 public class EmployeeController {
 
 	@Autowired
+//	@Qualifier("employeeService")
 	private EmployeeService employeeService;
 	
 	@GetMapping("/employees")

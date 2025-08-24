@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import com.simplilearn.SpringDemontration.model.Employee;
 import com.simplilearn.SpringDemontration.repository.EmployeeRepository;
 
-@Service
+@Service()
 public class EmployeeService {
 	
 	@Autowired
